@@ -1,6 +1,7 @@
 package jpabook.jpashop.domain;
 
 import jdk.jfr.Enabled;
+import org.w3c.dom.ls.LSOutput;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
@@ -15,15 +16,15 @@ public class Order {
     @Column(name = "ORDER_ID")
     private Long id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "MEMBER_ID")
     private Member member;
 
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @JoinColumn(name = "DELIVERY_ID")
     private Delivery delivery;
 
-    @OneToMany(mappedBy = "order")
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)
     private List<OrderItem> orderItemList = new ArrayList<>();
 
     private LocalDateTime orderDate;
