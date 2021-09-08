@@ -147,3 +147,39 @@
       * 조회, 검색 불가
       * 직접 생성해서 사용할 일이 없으므로 추상 클래스 권장
       * @Entity 클래스는 엔티티나 @MappedSuperClass로 지정한 클래스만 상속 가능
+
+
+## 10. 페치 조인(fetch join)
+    
+  * fetch join
+  
+    * SQL 조인 종류 X
+    
+    * JPQL에서 성능 최적화를 위해 제공하는 기능
+    
+    * 연관된 엔티티나 컬렉션을 SQL 한 번에 함께 조회하는 기능
+    
+    * join fetch 명령어 사용
+    
+    * 페치 조인 : = [LEFT[OUTER]| INNER] JOIN FETCH 조인경로
+
+      
+       * 엔티티 페치 조인
+         * 회원을 조회하면서 연관된 팀도 함께 조회(SQL 한 번에)
+         * SQL을 보면 회원 뿐만 아니라 팀(T.*)도 함께 SELECT
+         * [JPQL] select m from Member m join fetch m.team
+         * [SQL] select M.*, T.* from Member m inner join team t ON M.team_ID = T.ID
+
+
+![image](https://user-images.githubusercontent.com/79154652/132541871-a775e1d6-f725-4daf-a881-4971f5bd4ea7.png)
+
+
+   `
+   String jpql = "select m from Member m join fetch m.team";
+   
+   List<Member> members = em.createQuery(jpql, Member.class).getResultList();
+   `
+   
+ * 컬렉션 페치 조인
+   (일대다 관계, 컬렉션 페치 조인)
+       
