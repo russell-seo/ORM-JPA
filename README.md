@@ -61,7 +61,8 @@
       * 양쪽을 서로 참조하도록 개발
       * 실무에 가장 많이 쓰임
      
-  ![image](https://user-images.githubusercontent.com/79154652/132367754-0e2d08d6-43dd-4b76-b103-12f4c256fccf.png)
+     
+![image](https://user-images.githubusercontent.com/79154652/132367754-0e2d08d6-43dd-4b76-b103-12f4c256fccf.png)
   
   
    * 일대다 [1:N]
@@ -72,6 +73,7 @@
         * 이런 매핑은 공식적으로 존재 X
         * @JoinColumn(insertable = false, updatable = false)
         * 다대일 양방향을 사용하자
+        
         
 ![image](https://user-images.githubusercontent.com/79154652/132368163-b61aca10-4e2f-4882-ac9d-0e381689a506.png)
 
@@ -180,7 +182,7 @@
    List<Member> members = em.createQuery(jpql, Member.class).getResultList();
    `
    
- ## 컬렉션 페치 조인
+ * 컬렉션 페치 조인
    (일대다 관계, 컬렉션 페치 조인)
        
      * [JPQL]
@@ -190,7 +192,7 @@
         
            ![image](https://user-images.githubusercontent.com/79154652/132701636-ce2c9321-6fb5-4dc5-80ef-e83260c66ab9.png)
            
- ## 컬렉션 페치 조인 데이터 뻥튀기 해결 방안
+ * 컬렉션 페치 조인 데이터 뻥튀기 해결 방안
      
        * SQL의 DISTINCT 는 중복된 결과를 제거
        
@@ -201,11 +203,13 @@
 
       ****중요 : SQL에 DISTINCT 를 추가해도 데이터가 다르므로 SQL에서 중복 제거 실패
 
-          ![image](https://user-images.githubusercontent.com/79154652/132702281-57d66942-987a-4b3d-bad8-64e7da83136a.png)
+       
+![image](https://user-images.githubusercontent.com/79154652/132702281-57d66942-987a-4b3d-bad8-64e7da83136a.png)
           
           * DISTINCT 가 추가로 애플리케이션에서 중복 제거를 시도함.
           
           * 같은 식별자를 가진 Team 엔티티 제거
+          
 ![image](https://user-images.githubusercontent.com/79154652/132702416-f28bcb70-9b23-4fc7-9f93-2ed0113a51d3.png)
 
 
