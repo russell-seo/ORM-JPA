@@ -180,6 +180,87 @@
    List<Member> members = em.createQuery(jpql, Member.class).getResultList();
    `
    
- * 컬렉션 페치 조인
+ ## 컬렉션 페치 조인
    (일대다 관계, 컬렉션 페치 조인)
        
+     * [JPQL]
+        select t from Team t join fetch t.members where t.name = "팀A"
+        
+        * 아래와 같이 일대다 관계에서는 데이터가 뻥튀기 되어서 중복 결과를 반환해준다.
+        
+           ![image](https://user-images.githubusercontent.com/79154652/132701636-ce2c9321-6fb5-4dc5-80ef-e83260c66ab9.png)
+           
+ ## 컬렉션 페치 조인 데이터 뻥튀기 해결 방안
+     
+       * SQL의 DISTINCT 는 중복된 결과를 제거
+       
+       * JPQL의 DISTINCT 2가지 기능 제공
+       
+         1. SQL에 DISTINCT 를 추가
+         2. 애플리케이션에서 엔티티 중복 제거
+
+      ****중요 : SQL에 DISTINCT 를 추가해도 데이터가 다르므로 SQL에서 중복 제거 실패
+
+          ![image](https://user-images.githubusercontent.com/79154652/132702281-57d66942-987a-4b3d-bad8-64e7da83136a.png)
+          
+          * DISTINCT 가 추가로 애플리케이션에서 중복 제거를 시도함.
+          
+          * 같은 식별자를 가진 Team 엔티티 제거
+![image](https://user-images.githubusercontent.com/79154652/132702416-f28bcb70-9b23-4fc7-9f93-2ed0113a51d3.png)
+
+
+## 페치 조인과 일반 조인의 차이
+ 
+   * 페치 조인을 사용할 때만 연관된 엔티티도 함께 조회(즉시 로딩)
+   
+   * 페치 조이은 객체 그래프를 SQL 한번에 조회하는 개념 
+
+
+## 페치 조인의 특징과 한계
+
+  * 페치 조인 대상에는 별칭을 못 준다.
+  
+  * 둘 이상의 컬렉션은 페치 조인 불가능.
+
+  * 컬렉션을 페치 조인하면 페이징 API(setFirstResult, setMaxResults)를 사용할 수 없다.
+  
+    * 일대일, 다대일 같은 단일 값 연관 필드들은 페치 조인해도 페이징 기능
+    
+    * 하이버네이트는 경고 로그를 남기고 메모리에서 페이징 
+  
+  * 연관된 엔티티들을 SQL 한 번 으로 조회 - 성능 최적화
+  
+  * 엔티티에 직접 적용하는 글로벌 로딩 전략 @OneToMany(fetch = FetchType.LAZY)보다 우선함
+  
+  * 실무에서 글로벌 로딩 전략은 모두 지연 로딩
+  
+
+## 페치 조인 - 정리
+
+  * 여러 테이블을 조인해서 엔티티가 가진 모양이 아닌 전혀 다른 결과를 내야하면,
+  
+    페치조인 보다는 일반 조인을 사용하고 필요한 데이터들만 조회해서 DTO로 반환하는 것이 효과적
+    
+## 벌크 연산
+
+   * JPA 변경 감지 기능으로 실행하려면 너무 많은 SQL 실행
+      
+      * 변경된 데이터가 100건 이라면 100번의 UPDATE SQL실행
+   
+   * executeUpdate()의 결과는 영향받은 엔티티 수 반환
+   
+   * UPDATE, DELETE 지원
+   
+    `
+    String qlString = "update Member m set m.age = 20"
+    
+    int result = em.createQuery(qlString, Member.class)
+                 .executeUpdate();
+    `
+    
+## 벌크 연산 주의
+
+    * 중요
+      * 벌크 연산 수행 후 영속성 컨텍스트 초기화
+        
+        em.clear();
