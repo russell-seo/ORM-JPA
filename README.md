@@ -151,7 +151,7 @@
       * @Entity 클래스는 엔티티나 @MappedSuperClass로 지정한 클래스만 상속 가능
 
 
-## 10. 페치 조인(fetch join)
+## 8. 페치 조인(fetch join)
     
   * fetch join
   
