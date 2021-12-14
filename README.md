@@ -255,12 +255,12 @@
    
    * UPDATE, DELETE 지원
    
-    `
+   ~~~java
     String qlString = "update Member m set m.age = 20"
     
     int result = em.createQuery(qlString, Member.class)
                  .executeUpdate();
-    `
+   ~~~
     
 ## 벌크 연산 주의
 
