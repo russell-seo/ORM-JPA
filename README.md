@@ -1,3 +1,96 @@
+# JPA 활용 2편
+
+ ## Entity를 DTO로 변환
+ ~~~java
+ @GetMapping("/api/v2/simple-orders")
+public List<SimpleOrderDto> ordersV2() {
+ List<Order> orders = orderRepository.findAll();
+ List<SimpleOrderDto> result = orders.stream()
+               .map(o -> new SimpleOrderDto(o))
+               .collect(toList());
+ return result;
+}
+
+@Data
+static class SimpleOrderDto {
+ private Long orderId;
+ private String name;
+ private LocalDateTime orderDate; //주문시간
+ private OrderStatus orderStatus;
+ private Address address;
+ 
+ public SimpleOrderDto(Order order) {
+ orderId = order.getId();
+ name = order.getMember().getName();
+ orderDate = order.getOrderDate();
+ orderStatus = order.getStatus();
+ address = order.getDelivery().getAddress();
+ }
+}
+ ~~~
+
+- Entity를 DTO로 변환하는 일반적인 방법
+- 쿼리가 총 1 + N + N 번 실행된다
+  - `order`조회 1번(order 조회 결과 수가 N이 된다)
+  - `order -> member` 지연 로딩 조회 N 번
+  - `order -> delivery` 지연 로딩 조회 N 번
+  - order 결과가 2개면 최악의 경우 1 + 2 + 2 번 실행된다
+    - 지연로딩은 영속성 컨텍스트에서 조회하므로, 이미 조회된 경우 쿼리를 날리지 않는다.
+
+## Entity를 DTO로 변환 - 페치 조인 최적화
+
+Controller 코드는 위 와 동일
+
+OrderRepository - 추가 코드
+~~~java
+public List<Order> findAllWithMemberDelivery() {
+ return em.createQuery(
+               "select o from Order o" +
+               " join fetch o.member m" +
+               " join fetch o.delivery d", Order.class)
+ .getResultList();
+}
+~~~
+- Entity 페치 조인 을 사용하여 쿼리 1번에 조회
+- 페치 조인으로 `order -> member`, `order -> delivery` 는 이미 조회 된 상태이므로 지연로딩 X
+
+## JPA에서 DTO로 바로 조회
+
+OrderQueryRepository - DTO로 조회하는 전용 리포지토리를 생성하는걸 추천
+~~~java
+@Repository
+@RequiredArgsConstructor
+public class OrderSimpleQueryRepository {
+  private final EntityManager em;
+ 
+ public List<OrderSimpleQueryDto> findOrderDtos() {
+    return em.createQuery(
+          "select new 
+                  jpabook.jpashop.repository.order.simplequery.OrderSimpleQueryDto(o.id, m.name, 
+                  o.orderDate, o.status, d.address)" +
+                  " from Order o" +
+                  " join o.member m" +
+                  " join o.delivery d", OrderSimpleQueryDto.class)
+                  .getResultList();
+ }
+}
+~~~
+
+- 일반적인 SQL을 사용할 때 처럼 원하는 값을 선택해서 조회
+- `new` 명령어를 사용해서 JPQL의 결과를 DTO로 즉시 변환
+- SELECT 절에서 원하는 데이터를 직접 선택하므로 DB -> 애플리케이션 네트워크 용량 최적화(생각보다 미비)
+- Repository 재사용성 떨어짐, API 스펙에 맞춘 코드가 Repository에 들어가는 단점
+
+`정리`
+
+`쿼리 방식 선택 권장 순서`
+
+1. `우선 Entity를 DTO로 변환하는 방법을 선택한다`
+2. `필요하면 Fetch Join으로 성능을 최적화 한다. -> 대부분의 성능 이슈가 해결`
+3. `그래도 안되면 DTO로 직접 조회하는 방법을 사용한다.`
+4. `최후의 방법은 JPA가 제공하는 네이티브 SQL이나 스프링 JDBC Template를 사용해서 SQL을 직접 사용`
+
+
 # ORM-JPA
 ## 1.Entity 매핑
 속성 : name
