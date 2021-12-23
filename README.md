@@ -91,6 +91,114 @@ public class OrderSimpleQueryRepository {
 4. `최후의 방법은 JPA가 제공하는 네이티브 SQL이나 스프링 JDBC Template를 사용해서 SQL을 직접 사용`
 
 
+
+
+# 컬렉션(Collection) 조회 최적화
+
+ ## Entity를 DTO로 변환
+ 
+ Controller
+ ~~~java
+ @GetMapping("/api/v2/orders")
+public List<OrderDto> ordersV2() {
+ List<Order> orders = orderRepository.findAll();
+ List<OrderDto> result = orders.stream()
+ .map(o -> new OrderDto(o))
+ .collect(toList());
+ return result;
+}
+ ~~~
+
+
+
+ DTO
+ 
+ - Order -> OrderDTO로 매핑해야하며, Order 에 있는 orderItems 도 OrderItemDTO로 받아야 한다.
+ - 많은 주니어 개발자들이 조회하는 `Entity`는 DTO로 변환하며 Presentation 쪽으로 반환하지만, `Entity안에 있는 Entity는 DTO로 변환하지 않는데 이 또한 DTO로 변환하며 반환해 주어야 한다.`
+~~~java
+@Data
+static class OrderDto {
+ private Long orderId;
+ private String name;
+ private LocalDateTime orderDate; //주문시간
+ private OrderStatus orderStatus;
+ private Address address;
+ private List<OrderItemDto> orderItems;
+ 
+         public OrderDto(Order order) {
+             orderId = order.getId();
+             name = order.getMember().getName();
+             orderDate = order.getOrderDate();
+             orderStatus = order.getStatus();
+             address = order.getDelivery().getAddress();
+             orderItems = order.getOrderItems().stream()
+                                               .map(orderItem -> new OrderItemDto(orderItem))
+                                               .collect(toList());
+         }
+}
+
+@Data
+static class OrderItemDto {
+  private String itemName;//상품 명
+  private int orderPrice; //주문 가격
+  private int count; //주문 수량
+  
+  public OrderItemDto(OrderItem orderItem) {
+      itemName = orderItem.getItem().getName();
+      orderPrice = orderItem.getOrderPrice();
+      count = orderItem.getCount();
+  }
+}
+~~~
+
+ 위 코드의 문제점은 
+ 
+  - 지연 로딩으로 너무 많은 SQL이 실행된다.
+  - SQL 실행 수
+      - `order` 1번
+      - `member`,`address` N번(order 조회 수 만큼)
+      - `orderItem` N번(order 조회 수 만큼)
+      - `item` N번 (orderItem 조회 수 만큼)
+
+
+## Entity -> DTO로 변환 (페치 조인)
+
+Repository
+~~~java
+public List<Order> findAllWithItem() {
+ return em.createQuery(
+              "select distinct o from Order o" +
+              " join fetch o.member m" +
+              " join fetch o.delivery d" +
+              " join fetch o.orderItems oi" +
+              " join fetch oi.item i", Order.class)
+       .getResultList();
+}
+
+~~~
+
+ - 페치 조인으로 SQL이 1번만 실행됨
+ - `1 : N 에서 fetch join 할 시 DB ROW 갯수가 N개 만큼 증가하게 됨` 
+   
+주의 :  예) Order : orderItems 는 1 : N 관계이다. 만약 Order 가 2건이며, Order 1건 당 2개의 orderItems 를 가진다면. 
+   `즉 Order 기준으로 ordetItems 와 fetch join 할 시 2개의 row가 아닌 총 4개의 row가 발생한다.`
+ 
+ - `distinct`를 사용한 이유는 1 : N join이 있으므로 DB ROW 수가 증가한다. 그 결과 Order Entity 수 도 증가한다.
+    
+    하지만 JPA의 `distinct`는 두 가지 기능이 있다.
+    
+    1. DB에 distinct를 추가해서 쿼리를 날려준다. 하지만 DB의 `distinct`는 모든 column의 값이 같은 것만 중복을 제거 해준다. 즉 같지 않다면 똑같이 N 개의 ROW가 발생
+    2. DB에서 1번과 같은 경우가 발생하지만 JPA에서 `distinct`는 애플리케이션 내부적으로 id 값이 같은 column에 대해 제거를 하고 가져와 준다 
+
+
+ - 하지만 1 : N 페치 조인의 단점은 `페이징이 불가능` 하다.
+
+    참고 : 컬렉션 페치 조인을 사용하면 `페이징이 불가능` 하다. Hibernate는 경고 로그를 남기면서 모든 데이터를 DB에서 읽어오고, 메모리에
+    페이징 해버린다(매우 위험하다. Out of Memory 가 발생할 수 있다)
+    
+    참고 : 컬렉션 페치 조인은 1개만 사용할 수 있다. 컬렉션 둘 이상에 페치 조인을 사용하면 안된다. 1개를 페치 조인 할 때도 데이터가 뻥튀기
+    되기 때문에 2개 이상이면 데이터가 부정합하게 조회 될 수 있다.
+
 # ORM-JPA
 ## 1.Entity 매핑
 속성 : name
