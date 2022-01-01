@@ -1,5 +1,16 @@
 # JPA 활용 2편
 
+## API 개발 고급 정리
+
+ - 권장순서
+   1. Entity 조회 방식으로 우선 접근
+      - 페치조인으로 쿼리수를 최적화
+      - 컬렉션 최적화
+         - 페이징 필요 `hibernate.default_batch_fetch_size`, `@Batchsize`로 최적화
+         - 페이징 필요 X -> 페치 조인 사용
+   2. Entity 조회 방식으로 해결이 안되면 DTO로 조회 방식 사용
+  
+
  ## Entity를 DTO로 변환
  ~~~java
  @GetMapping("/api/v2/simple-orders")
