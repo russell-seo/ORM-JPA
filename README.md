@@ -1,7 +1,6 @@
 # JPA 활용 2편
 
 
-[Auditing](https://github.com/russell-seo/ORM-JPA/edit/master/README.md/Auditing)
 
 ## API 개발 고급 정리
 
