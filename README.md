@@ -1,5 +1,6 @@
 # JPA 활용 2편
 - [Entity를 DTO로 변환](#entity를-dto로-변환)
+- [Entity -> DTO 페치조인](#entity를-dto로-변환---페치-조인-최적화)
 - [JPA에서 DTO 바로 조회](#jpa에서-dto로-바로-조회)
 - [Auditing](#auditing)
 
