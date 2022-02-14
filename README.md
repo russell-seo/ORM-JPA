@@ -1,6 +1,7 @@
 # JPA 활용 2편
-
-[Auditing](#auditing)
+- [Entity를 DTO로 변환](#entity를-dto로-변환)
+- [JPA에서 DTO 바로 조회](#jpa에서-dto로-바로-조회)
+- [Auditing](#auditing)
 
 ## API 개발 고급 정리
 
